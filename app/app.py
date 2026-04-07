@@ -120,7 +120,7 @@ def main():
     st.set_page_config(
         page_title="Unmigrated Asset Extractor",
         page_icon="assets/sucafina.svg",
-        layout="wide",
+        layout="wide", 
     )
 
     st.title("Unmigrated Asset Extractor")
@@ -190,6 +190,10 @@ def main():
 
         st.write(f"Found {len(df)} unmigrated records.")
         st.dataframe(df)
+
+        if not supply_chain_code.strip():
+            st.warning("Please enter a Supply Chain Code to download the exported data.")
+            return
 
         # Prepare data for both formats
         if full_format == "csv":
