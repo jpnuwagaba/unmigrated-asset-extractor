@@ -151,23 +151,39 @@ def main():
             key="migrated_dataset",
         )
 
-    id_col, code_col = st.columns(2)
-    id_field = id_col.text_input("Asset ID field name", value="ID")
-    supply_chain_code = code_col.text_input("Supply Chain Code", value="")
+    # id_col, code_col, is_new_supply_chain = st.columns(3)
+    # id_field = id_col.text_input("Asset ID field name", value="ID")
+    # supply_chain_code = code_col.text_input("Supply Chain Code", value="")
+    # is_new_supply_chain = is_new_supply_chain.checkbox("Is New Supply Chain?", value=False)
 
-    if not full_file or not migrated_file:
-        st.warning("Please upload both the all-assets dataset and the migrated-assets dataset to extract unmigrated assets.")
+    id_col, code_and_supply_chain_col = st.columns(2)
+    id_field = id_col.text_input("Asset ID field name", value="ID") 
+    supply_chain_code = code_and_supply_chain_col.text_input("Supply Chain Code", value="")
+    is_new_supply_chain = code_and_supply_chain_col.checkbox("Is New Supply Chain? (Check if this is the first migration for this supply chain)", value=False)
+    
+
+    if not full_file:
+        st.warning("Please upload the all-assets dataset to extract unmigrated assets.")
+        return
+
+    if not is_new_supply_chain and not migrated_file:
+        st.warning("Please upload the migrated-assets dataset or check 'Is New Supply Chain?' if this is the first migration for this supply chain.")
+        return
+
+    if is_new_supply_chain and migrated_file:
+        st.error("A migrated assets dataset should not be uploaded when 'Is New Supply Chain?' is checked. Please remove the migrated dataset file and try again.")
         return
 
     try:
         full_format, full_dataset = load_dataset(full_file)
-        migrated_format, migrated_dataset = load_dataset(migrated_file)
 
         migrated_ids = set()
-        if migrated_format == "csv":
-            migrated_ids = extract_ids_from_dataframe(migrated_dataset, id_field)
-        else:
-            migrated_ids = extract_ids_from_geojson(migrated_dataset, id_field)
+        if not is_new_supply_chain:
+            migrated_format, migrated_dataset = load_dataset(migrated_file)
+            if migrated_format == "csv":
+                migrated_ids = extract_ids_from_dataframe(migrated_dataset, id_field)
+            else:
+                migrated_ids = extract_ids_from_geojson(migrated_dataset, id_field)
 
         unmigrated = filter_unmigrated(full_dataset, full_format, migrated_ids, id_field)
 
